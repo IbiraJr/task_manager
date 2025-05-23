@@ -1,37 +1,40 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
-import 'package:task_manager/features/auth/domain/usecases/sign_in_usecase.dart';
-import 'package:task_manager/features/auth/domain/usecases/sign_up_usecase.dart';
+import 'package:task_manager/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:task_manager/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:task_manager/features/auth/domain/repositories/auth_repository.dart';
+import 'package:task_manager/features/auth/domain/usecases/get_current_user_use_case.dart';
+import 'package:task_manager/features/auth/domain/usecases/sign_in_use_case.dart';
+import 'package:task_manager/features/auth/domain/usecases/sign_out_use_case.dart';
+import 'package:task_manager/features/auth/domain/usecases/sign_up_use_case.dart';
 import 'package:task_manager/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:task_manager/features/task/data/datasources/task_local_data_source.dart';
-import 'package:task_manager/features/task/data/datasources/task_remote_data_source.dart';
-import 'package:task_manager/features/task/data/repositories/task_repository_impl.dart';
-import 'package:task_manager/features/task/domain/repositories/task_repository.dart';
 
 Future<void> initializeAuthInjectionContainer(GetIt sl) async {
-  //Core
-
-  //Services
+  //Firebase
+  sl.registerLazySingleton(() => FirebaseAuth.instance);
   // Data sources
-  sl.registerLazySingleton<TaskLocalDataSource>(
-    () => TaskLocalDataSourceImpl(databaseHelper: sl()),
-  );
-  sl.registerLazySingleton<TaskRemoteDataSource>(
-    () => TaskRemoteDataSourceImpl(firestore: sl()),
+  sl.registerLazySingleton<AuthRemoteDataSource>(
+    () => AuthRemoteDataSourceImpl(firebaseAuth: sl()),
   );
 
   // Repository
-  sl.registerLazySingleton<TaskRepository>(
-    () => TaskRepositoryImpl(
-      taskLocalDataSource: sl(),
-      taskRemoteDataSource: sl(),
-      networkInfo: sl(),
-    ),
+  sl.registerLazySingleton<AuthRepository>(
+    () => AuthRepositoryImpl(authRemoteDataSource: sl()),
   );
 
   // Use cases
   sl.registerLazySingleton(() => SignInUseCase(sl()));
   sl.registerLazySingleton(() => SignUpUseCase(sl()));
+  sl.registerLazySingleton(() => SignOutUseCase(sl()));
+  sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
 
   //Bloc
-  sl.registerFactory(() => AuthBloc(signInUseCase: sl(), signUpUseCase: sl()));
+  sl.registerLazySingleton(
+    () => AuthBloc(
+      signInUseCase: sl(),
+      signUpUseCase: sl(),
+      getCurrentUserUseCase: sl(),
+      signOutUseCase: sl(),
+    ),
+  );
 }
