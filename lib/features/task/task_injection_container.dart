@@ -2,7 +2,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get_it/get_it.dart';
 import 'package:task_manager/core/database/local_database.dart';
 import 'package:task_manager/core/network/network_info.dart';
-import 'package:task_manager/core/services/NetworkSyncService.dart';
+import 'package:task_manager/features/task/services/NetworkSyncService.dart';
 import 'package:task_manager/features/task/data/datasources/task_local_data_source.dart';
 import 'package:task_manager/features/task/data/datasources/task_remote_data_source.dart';
 import 'package:task_manager/features/task/data/repositories/task_repository_impl.dart';

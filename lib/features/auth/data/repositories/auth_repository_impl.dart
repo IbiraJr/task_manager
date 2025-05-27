@@ -56,7 +56,15 @@ class AuthRepositoryImpl extends AuthRepository {
   }
 
   @override
-  Future<User?> getCurrentUser() async {
-    return authRemoteDataSource.getCurrentUser();
+  User? getCurrentUser() {
+    final UserModel? userModel = authRemoteDataSource.getCurrentUser();
+    if (userModel != null) {
+      return User(
+        id: userModel.id,
+        email: userModel.email,
+        name: userModel.name,
+      );
+    }
+    return null;
   }
 }

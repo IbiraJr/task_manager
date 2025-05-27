@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:task_manager/config/app_router.dart';
-import 'package:task_manager/core/services/NetworkSyncService.dart';
+import 'package:task_manager/features/task/services/NetworkSyncService.dart';
 import 'package:task_manager/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:task_manager/injection_container.dart' as di;
 

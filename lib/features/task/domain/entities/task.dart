@@ -1,4 +1,6 @@
-class Task {
+import 'package:equatable/equatable.dart';
+
+class Task extends Equatable {
   final String id;
   final String title;
   final String description;
@@ -12,5 +14,7 @@ class Task {
     required this.isCompleted,
     required this.createdAt,
   });
-   
+
+  @override
+  List<Object?> get props => [id, title, description, isCompleted, createdAt];
 }

@@ -1,7 +1,10 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:dartz/dartz.dart' as dartz;
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:task_manager/core/error/failures.dart';
 import 'package:task_manager/features/task/domain/entities/task.dart';
 import 'package:task_manager/features/task/domain/usecases/add_task.dart';
 import 'package:task_manager/features/task/domain/usecases/get_tasks.dart';
@@ -25,8 +28,11 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   ) async {
     emit(TaskLoading());
     await Future.delayed(const Duration(seconds: 3));
-    final List<Task> tasks = await getTasks.call();
-    emit(TaskLoaded(tasks: tasks));
+    final dartz.Either<Failure, List<Task>> result = await getTasks.call();
+    result.fold(
+      (failure) => emit(TaskError(message: failure.message)),
+      (tasks) => emit(TaskLoaded(tasks: tasks)),
+    );
   }
 
   Future<void> _onAddTaskEvent(

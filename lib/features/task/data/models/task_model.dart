@@ -2,7 +2,7 @@ import 'package:task_manager/features/task/domain/entities/task.dart';
 
 class TaskModel extends Task {
   final bool isSynced;
-  TaskModel({
+  const TaskModel({
     required super.id,
     required super.title,
     required super.description,

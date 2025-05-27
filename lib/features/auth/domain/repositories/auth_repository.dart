@@ -10,5 +10,5 @@ abstract class AuthRepository {
     String name,
   );
   Future<void> signOut();
-  Future<User?> getCurrentUser();
+  User? getCurrentUser();
 }

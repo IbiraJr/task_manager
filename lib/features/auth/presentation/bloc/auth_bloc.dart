@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:task_manager/core/error/failures.dart';
 import 'package:task_manager/features/auth/domain/entities/user.dart';
@@ -57,6 +58,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     CheckAuthStatusEvent event,
     Emitter<AuthState> emit,
   ) async {
+    // TODO: implement error handling
     final User? user = await getCurrentUserUseCase.call();
     if (user != null) {
       emit(Authenticated());

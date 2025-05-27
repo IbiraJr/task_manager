@@ -1,3 +1,5 @@
+import 'package:dartz/dartz.dart' as dartz;
+import 'package:task_manager/core/error/failures.dart';
 import 'package:task_manager/core/network/network_info.dart';
 import 'package:task_manager/features/task/data/datasources/task_local_data_source.dart';
 import 'package:task_manager/features/task/data/datasources/task_remote_data_source.dart';
@@ -16,14 +18,18 @@ class TaskRepositoryImpl implements TaskRepository {
     required this.networkInfo,
   });
   @override
-  Future<List<Task>> getTasks() async {
-    final localTasks = await taskLocalDataSource.getTasks();
-    if (await networkInfo.isConnected) {
-      final remoteTasks = await taskRemoteDataSource.syncTasks();
-      await taskLocalDataSource.cacheTasks(remoteTasks);
-      return remoteTasks;
+  Future<dartz.Either<Failure, List<Task>>> getTasks() async {
+    try {
+      final localTasks = await taskLocalDataSource.getTasks();
+      if (await networkInfo.isConnected) {
+        final remoteTasks = await taskRemoteDataSource.syncTasks();
+        await taskLocalDataSource.cacheTasks(remoteTasks);
+        return dartz.Right(remoteTasks);
+      }
+      return dartz.Right(localTasks);
+    } catch (e) {
+      return dartz.Left(ServerFailure('Unknown error: ${e.toString()}'));
     }
-    return localTasks;
   }
 
   @override
