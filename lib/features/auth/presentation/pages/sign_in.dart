@@ -52,19 +52,26 @@ class _SignInPageState extends State<SignInPage> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
+                  key: Key('emailField'),
+                  controller: _emailController,
                   decoration: InputDecoration(labelText: 'Email'),
                 ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: TextFormField(
+                  key: Key('passwordField'),
+                  controller: _passwordController,
                   decoration: InputDecoration(labelText: 'Password'),
                   obscureText: true,
                 ),
               ),
               state is AuthLoading
-                  ? const CircularProgressIndicator()
+                  ? const CircularProgressIndicator(
+                    key: Key('loadingIndicator'),
+                  )
                   : ElevatedButton(
+                    key: Key('continueButton'),
                     onPressed: () {
                       _login();
                     },

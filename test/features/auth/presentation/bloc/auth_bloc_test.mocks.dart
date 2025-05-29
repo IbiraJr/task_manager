@@ -138,13 +138,17 @@ class MockSignOutUseCase extends _i1.Mock implements _i9.SignOutUseCase {
           as _i2.AuthRepository);
 
   @override
-  _i5.Future<void> call() =>
+  _i5.Future<_i3.Either<_i6.Failure, void>> call() =>
       (super.noSuchMethod(
             Invocation.method(#call, []),
-            returnValue: _i5.Future<void>.value(),
-            returnValueForMissingStub: _i5.Future<void>.value(),
+            returnValue: _i5.Future<_i3.Either<_i6.Failure, void>>.value(
+              _FakeEither_1<_i6.Failure, void>(
+                this,
+                Invocation.method(#call, []),
+              ),
+            ),
           )
-          as _i5.Future<void>);
+          as _i5.Future<_i3.Either<_i6.Failure, void>>);
 }
 
 /// A class which mocks [GetCurrentUserUseCase].
@@ -166,12 +170,4 @@ class MockGetCurrentUserUseCase extends _i1.Mock
             ),
           )
           as _i2.AuthRepository);
-
-  @override
-  _i5.Future<_i7.User?> call() =>
-      (super.noSuchMethod(
-            Invocation.method(#call, []),
-            returnValue: _i5.Future<_i7.User?>.value(),
-          )
-          as _i5.Future<_i7.User?>);
 }

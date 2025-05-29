@@ -35,7 +35,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     final result = await signInUseCase.call(event.email, event.password);
     result.fold(
       (failure) => emit(AuthError(failure)),
-      (user) => emit(Authenticated()),
+      (user) => emit(Authenticated(user)),
     );
   }
 
@@ -48,20 +48,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
     result.fold(
       (failure) => emit(AuthError(failure)),
-      (user) => emit(Authenticated()),
+      (user) => emit(Authenticated(user)),
     );
   }
 
-  FutureOr<void> _signOutEvent(SignOutEvent event, Emitter<AuthState> emit) {}
+  Future<void> _signOutEvent(
+    SignOutEvent event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    final result = await signOutUseCase.call();
+    result.fold(
+      (failure) => emit(AuthError(failure)),
+      (_) => emit(Unauthenticated()),
+    );
+    emit(Unauthenticated());
+  }
 
   Future<void> _checkAuthStatusEvent(
     CheckAuthStatusEvent event,
     Emitter<AuthState> emit,
   ) async {
-    // TODO: implement error handling
-    final User? user = await getCurrentUserUseCase.call();
+    final User? user = getCurrentUserUseCase.call();
     if (user != null) {
-      emit(Authenticated());
+      emit(Authenticated(user));
     } else {
       emit(Unauthenticated());
     }

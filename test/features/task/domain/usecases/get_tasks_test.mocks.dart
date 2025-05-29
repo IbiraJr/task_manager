@@ -54,13 +54,17 @@ class MockTaskRepository extends _i1.Mock implements _i3.TaskRepository {
           as _i4.Future<_i2.Either<_i5.Failure, List<_i6.Task>>>);
 
   @override
-  _i4.Future<void> addTask(_i6.Task? task) =>
+  _i4.Future<_i2.Either<_i5.Failure, void>> addTask(_i6.Task? task) =>
       (super.noSuchMethod(
             Invocation.method(#addTask, [task]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i4.Future<_i2.Either<_i5.Failure, void>>.value(
+              _FakeEither_0<_i5.Failure, void>(
+                this,
+                Invocation.method(#addTask, [task]),
+              ),
+            ),
           )
-          as _i4.Future<void>);
+          as _i4.Future<_i2.Either<_i5.Failure, void>>);
 
   @override
   _i4.Future<void> syncPendingTasks() =>

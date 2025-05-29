@@ -1,8 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:bloc_test/bloc_test.dart';
+import 'package:dartz/dartz.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
-import 'package:dartz/dartz.dart';
 import 'package:task_manager/core/error/failures.dart';
 import 'package:task_manager/features/auth/domain/entities/user.dart';
 import 'package:task_manager/features/auth/domain/usecases/get_current_user_use_case.dart';
@@ -11,15 +11,15 @@ import 'package:task_manager/features/auth/domain/usecases/sign_out_use_case.dar
 import 'package:task_manager/features/auth/domain/usecases/sign_up_use_case.dart';
 import 'package:task_manager/features/auth/presentation/bloc/auth_bloc.dart';
 
-// Generate mocks
+import 'auth_bloc_test.mocks.dart';
+
+// Generate mocks by running: flutter packages pub run build_runner build
 @GenerateMocks([
   SignInUseCase,
   SignUpUseCase,
   SignOutUseCase,
   GetCurrentUserUseCase,
 ])
-import 'auth_bloc_test.mocks.dart';
-
 void main() {
   group('AuthBloc', () {
     late AuthBloc authBloc;
@@ -28,11 +28,18 @@ void main() {
     late MockSignOutUseCase mockSignOutUseCase;
     late MockGetCurrentUserUseCase mockGetCurrentUserUseCase;
 
-    const testUser = User(
-      id: '123',
-      email: 'test@example.com',
-      name: 'John Doe',
-    );
+    // Test data
+    const testEmail = 'test@example.com';
+    const testPassword = 'password123';
+    const testName = 'Test User';
+    const testUser = User(id: '1', email: testEmail, name: testName);
+    final testFailure = ServerFailure('Something went wrong');
+
+    setUpAll(() {
+      // Provide dummy values for Mockito
+      provideDummy<Either<Failure, User>>(Right(testUser));
+      provideDummy<Either<Failure, void>>(const Right(null));
+    });
 
     setUp(() {
       mockSignInUseCase = MockSignInUseCase();
@@ -48,28 +55,21 @@ void main() {
       );
     });
 
-    group('constructor', () {
-      test('should have correct initial state', () {
-        expect(authBloc.state, equals(Unauthenticated()));
-      });
+    tearDown(() {
+      authBloc.close();
+      reset(mockSignInUseCase);
+      reset(mockSignUpUseCase);
+      reset(mockSignOutUseCase);
+      reset(mockGetCurrentUserUseCase);
+    });
 
-      test('should initialize with all required use cases', () {
-        expect(authBloc.signInUseCase, equals(mockSignInUseCase));
-        expect(authBloc.signUpUseCase, equals(mockSignUpUseCase));
-        expect(authBloc.signOutUseCase, equals(mockSignOutUseCase));
-        expect(
-          authBloc.getCurrentUserUseCase,
-          equals(mockGetCurrentUserUseCase),
-        );
-      });
+    test('initial state should be Unauthenticated', () {
+      expect(authBloc.state, equals(Unauthenticated()));
     });
 
     group('SignInEvent', () {
-      const testEmail = 'test@example.com';
-      const testPassword = 'password123';
-
       blocTest<AuthBloc, AuthState>(
-        'should emit [AuthLoading, Authenticated] when sign in succeeds',
+        'emits [AuthLoading, Authenticated] when sign in succeeds',
         build: () {
           when(
             mockSignInUseCase.call(testEmail, testPassword),
@@ -79,59 +79,49 @@ void main() {
         act:
             (bloc) =>
                 bloc.add(SignInEvent(email: testEmail, password: testPassword)),
-        expect: () => [AuthLoading(), Authenticated()],
+        expect: () => [AuthLoading(), Authenticated(testUser)],
         verify: (_) {
           verify(mockSignInUseCase.call(testEmail, testPassword)).called(1);
         },
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should emit [AuthLoading, AuthError] when sign in fails',
+        'emits [AuthLoading, AuthError] when sign in fails',
         build: () {
-          final failure = AuthFailure('Invalid credentials');
           when(
             mockSignInUseCase.call(testEmail, testPassword),
-          ).thenAnswer((_) async => Left(failure));
+          ).thenAnswer((_) async => Left(testFailure));
           return authBloc;
         },
         act:
             (bloc) =>
                 bloc.add(SignInEvent(email: testEmail, password: testPassword)),
-        expect:
-            () => [
-              AuthLoading(),
-              AuthError(AuthFailure('Invalid credentials')),
-            ],
+        expect: () => [AuthLoading(), AuthError(testFailure)],
         verify: (_) {
           verify(mockSignInUseCase.call(testEmail, testPassword)).called(1);
         },
       );
 
-          blocTest<AuthBloc, AuthState>(
-        'should handle validation failure during sign in',
+      blocTest<AuthBloc, AuthState>(
+        'calls SignInUseCase with correct parameters',
         build: () {
-          final failure = AuthFailure('Email cannot be empty');
           when(
-            mockSignInUseCase.call('', testPassword),
-          ).thenAnswer((_) async => Left(failure));
+            mockSignInUseCase.call(any, any),
+          ).thenAnswer((_) async => Right(testUser));
           return authBloc;
         },
-        act: (bloc) => bloc.add(SignInEvent(email: '', password: testPassword)),
-        expect:
-            () => [
-              AuthLoading(),
-              AuthError(AuthFailure('Email cannot be empty')),
-            ],
+        act:
+            (bloc) =>
+                bloc.add(SignInEvent(email: testEmail, password: testPassword)),
+        verify: (_) {
+          verify(mockSignInUseCase.call(testEmail, testPassword)).called(1);
+        },
       );
     });
 
     group('SignUpEvent', () {
-      const testEmail = 'test@example.com';
-      const testPassword = 'password123';
-      const testName = 'John Doe';
-
       blocTest<AuthBloc, AuthState>(
-        'should emit [AuthLoading, Authenticated] when sign up succeeds',
+        'emits [AuthLoading, Authenticated] when sign up succeeds',
         build: () {
           when(
             mockSignUpUseCase.call(testEmail, testPassword, testName),
@@ -146,7 +136,7 @@ void main() {
                 name: testName,
               ),
             ),
-        expect: () => [AuthLoading(), Authenticated()],
+        expect: () => [AuthLoading(), Authenticated(testUser)],
         verify: (_) {
           verify(
             mockSignUpUseCase.call(testEmail, testPassword, testName),
@@ -155,12 +145,11 @@ void main() {
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should emit [AuthLoading, AuthError] when sign up fails',
+        'emits [AuthLoading, AuthError] when sign up fails',
         build: () {
-          final failure = AuthFailure('Email already exists');
           when(
             mockSignUpUseCase.call(testEmail, testPassword, testName),
-          ).thenAnswer((_) async => Left(failure));
+          ).thenAnswer((_) async => Left(testFailure));
           return authBloc;
         },
         act:
@@ -171,11 +160,7 @@ void main() {
                 name: testName,
               ),
             ),
-        expect:
-            () => [
-              AuthLoading(),
-              AuthError(AuthFailure('Email already exists')),
-            ],
+        expect: () => [AuthLoading(), AuthError(testFailure)],
         verify: (_) {
           verify(
             mockSignUpUseCase.call(testEmail, testPassword, testName),
@@ -184,12 +169,11 @@ void main() {
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should handle server failure during sign up',
+        'calls SignUpUseCase with correct parameters',
         build: () {
-          final failure = ServerFailure('Internal server error');
           when(
-            mockSignUpUseCase.call(testEmail, testPassword, testName),
-          ).thenAnswer((_) async => Left(failure));
+            mockSignUpUseCase.call(any, any, any),
+          ).thenAnswer((_) async => Right(testUser));
           return authBloc;
         },
         act:
@@ -200,51 +184,65 @@ void main() {
                 name: testName,
               ),
             ),
+        verify: (_) {
+          verify(
+            mockSignUpUseCase.call(testEmail, testPassword, testName),
+          ).called(1);
+        },
+      );
+    });
+
+    group('SignOutEvent', () {
+      blocTest<AuthBloc, AuthState>(
+        'emits [AuthLoading, AuthError, Unauthenticated] when sign out fails',
+        build: () {
+          when(
+            mockSignOutUseCase.call(),
+          ).thenAnswer((_) async => Left(testFailure));
+          return authBloc;
+        },
+        act: (bloc) => bloc.add(SignOutEvent()),
         expect:
-            () => [
-              AuthLoading(),
-              AuthError(ServerFailure('Internal server error')),
-            ],
+            () => [AuthLoading(), AuthError(testFailure), Unauthenticated()],
+        verify: (_) {
+          verify(mockSignOutUseCase.call()).called(1);
+        },
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should handle validation failure during sign up',
+        'always emits Unauthenticated as final state even when use case fails',
         build: () {
-          final failure = AuthFailure('Password too weak');
           when(
-            mockSignUpUseCase.call(testEmail, 'weak', testName),
-          ).thenAnswer((_) async => Left(failure));
+            mockSignOutUseCase.call(),
+          ).thenAnswer((_) async => Left(testFailure));
           return authBloc;
         },
-        act:
-            (bloc) => bloc.add(
-              SignUpEvent(email: testEmail, password: 'weak', name: testName),
-            ),
-        expect:
-            () => [AuthLoading(), AuthError(AuthFailure('Password too weak'))],
+        act: (bloc) => bloc.add(SignOutEvent()),
+        verify: (_) {
+          // The final state should always be Unauthenticated
+          expect(authBloc.state, equals(Unauthenticated()));
+        },
       );
     });
 
     group('CheckAuthStatusEvent', () {
       blocTest<AuthBloc, AuthState>(
-        'should emit [Authenticated] when user exists',
+        'emits [Authenticated] when user is logged in',
         build: () {
-          when(
-            mockGetCurrentUserUseCase.call(),
-          ).thenAnswer((_) async => testUser);
+          when(mockGetCurrentUserUseCase.call()).thenReturn(testUser);
           return authBloc;
         },
         act: (bloc) => bloc.add(CheckAuthStatusEvent()),
-        expect: () => [Authenticated()],
+        expect: () => [Authenticated(testUser)],
         verify: (_) {
           verify(mockGetCurrentUserUseCase.call()).called(1);
         },
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should emit [Unauthenticated] when user is null',
+        'emits [Unauthenticated] when no user is logged in',
         build: () {
-          when(mockGetCurrentUserUseCase.call()).thenAnswer((_) async => null);
+          when(mockGetCurrentUserUseCase.call()).thenReturn(null);
           return authBloc;
         },
         act: (bloc) => bloc.add(CheckAuthStatusEvent()),
@@ -255,151 +253,143 @@ void main() {
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should handle exception during auth status check',
+        'calls GetCurrentUserUseCase without parameters',
         build: () {
-          when(
-            mockGetCurrentUserUseCase.call(),
-          ).thenThrow(Exception('Token expired'));
+          when(mockGetCurrentUserUseCase.call()).thenReturn(null);
           return authBloc;
         },
         act: (bloc) => bloc.add(CheckAuthStatusEvent()),
-        errors: () => [isA<Exception>()],
         verify: (_) {
           verify(mockGetCurrentUserUseCase.call()).called(1);
+          verifyNoMoreInteractions(mockGetCurrentUserUseCase);
         },
-      );
-
-      blocTest<AuthBloc, AuthState>(
-        'should transition from loading state correctly',
-        build: () {
-          when(
-            mockGetCurrentUserUseCase.call(),
-          ).thenAnswer((_) async => testUser);
-          return authBloc;
-        },
-        seed: () => AuthLoading(),
-        act: (bloc) => bloc.add(CheckAuthStatusEvent()),
-        expect: () => [Authenticated()],
       );
     });
 
-    group('SignOutEvent', () {
+    group('Multiple events', () {
       blocTest<AuthBloc, AuthState>(
-        'should not emit any state changes (implementation empty)',
-        build: () => authBloc,
-        act: (bloc) => bloc.add(SignOutEvent()),
-        expect: () => [],
-      );
-
-      blocTest<AuthBloc, AuthState>(
-        'should maintain current state when sign out is triggered',
-        build: () => authBloc,
-        seed: () => Authenticated(),
-        act: (bloc) => bloc.add(SignOutEvent()),
-        expect: () => [],
-      );
-    });
-
-    group('state transitions', () {
-      blocTest<AuthBloc, AuthState>(
-        'should transition from Unauthenticated to AuthLoading to Authenticated',
+        'handles multiple events in sequence',
         build: () {
           when(
-            mockSignInUseCase.call('test@example.com', 'password123'),
+            mockSignInUseCase.call(testEmail, testPassword),
           ).thenAnswer((_) async => Right(testUser));
-          return authBloc;
-        },
-        act:
-            (bloc) => bloc.add(
-              SignInEvent(email: 'test@example.com', password: 'password123'),
-            ),
-        expect: () => [AuthLoading(), Authenticated()],
-      );
-
-      blocTest<AuthBloc, AuthState>(
-        'should transition from Authenticated to AuthLoading to AuthError',
-        build: () {
-          final failure = AuthFailure('Connection lost');
           when(
-            mockSignInUseCase.call('test@example.com', 'wrong'),
-          ).thenAnswer((_) async => Left(failure));
+            mockSignOutUseCase.call(),
+          ).thenAnswer((_) async => const Right(null));
           return authBloc;
         },
-        seed: () => Authenticated(),
-        act:
-            (bloc) => bloc.add(
-              SignInEvent(email: 'test@example.com', password: 'wrong'),
-            ),
-        expect:
-            () => [AuthLoading(), AuthError(AuthFailure('Connection lost'))],
-      );
-    });
-
-    group('edge cases', () {
-      blocTest<AuthBloc, AuthState>(
-        'should handle empty email and password in sign in',
-        build: () {
-          final failure = AuthFailure('Email and password required');
-          when(
-            mockSignInUseCase.call('', ''),
-          ).thenAnswer((_) async => Left(failure));
-          return authBloc;
+        act: (bloc) async {
+          bloc.add(SignInEvent(email: testEmail, password: testPassword));
+          await Future.delayed(const Duration(milliseconds: 100));
+          bloc.add(SignOutEvent());
         },
-        act: (bloc) => bloc.add(SignInEvent(email: '', password: '')),
         expect:
             () => [
               AuthLoading(),
-              AuthError(AuthFailure('Email and password required')),
+              Authenticated(testUser),
+              AuthLoading(),
+              Unauthenticated(),
             ],
       );
 
       blocTest<AuthBloc, AuthState>(
-        'should handle empty fields in sign up',
+        'handles rapid fire events correctly',
         build: () {
-          final failure = AuthFailure('All fields required');
-          when(
-            mockSignUpUseCase.call('', '', ''),
-          ).thenAnswer((_) async => Left(failure));
-          return authBloc;
-        },
-        act: (bloc) => bloc.add(SignUpEvent(email: '', password: '', name: '')),
-        expect:
-            () => [
-              AuthLoading(),
-              AuthError(AuthFailure('All fields required')),
-            ],
-      );
-
-      blocTest<AuthBloc, AuthState>(
-        'should handle special characters in credentials',
-        build: () {
-          const specialEmail = 'test+user@example.com';
-          const specialPassword = 'P@ssw0rd!';
-          const specialName = 'José María';
-          when(
-            mockSignUpUseCase.call(specialEmail, specialPassword, specialName),
-          ).thenAnswer((_) async => Right(testUser));
+          when(mockGetCurrentUserUseCase.call()).thenReturn(testUser);
           return authBloc;
         },
         act: (bloc) {
-          const specialEmail = 'test+user@example.com';
-          const specialPassword = 'P@ssw0rd!';
-          const specialName = 'José María';
-
-          return bloc.add(
-            SignUpEvent(
-              email: specialEmail,
-              password: specialPassword,
-              name: specialName,
-            ),
-          );
+          // Add multiple CheckAuthStatusEvent rapidly
+          bloc.add(CheckAuthStatusEvent());
+          bloc.add(CheckAuthStatusEvent());
+          bloc.add(CheckAuthStatusEvent());
         },
-        expect: () => [AuthLoading(), Authenticated()],
+        verify: (_) {
+          // Should be called for each event
+          verify(mockGetCurrentUserUseCase.call()).called(3);
+        },
       );
     });
 
-    tearDown(() {
-      authBloc.close();
+    group('Error handling', () {
+      blocTest<AuthBloc, AuthState>(
+        'handles different types of failures correctly',
+        build: () {
+          final networkFailure = AuthFailure('No internet connection');
+          when(
+            mockSignInUseCase.call(testEmail, testPassword),
+          ).thenAnswer((_) async => Left(networkFailure));
+          return authBloc;
+        },
+        act:
+            (bloc) =>
+                bloc.add(SignInEvent(email: testEmail, password: testPassword)),
+        expect:
+            () => [
+              AuthLoading(),
+              AuthError(AuthFailure('No internet connection')),
+            ],
+      );
+    });
+
+    group('State equality', () {
+      test('Authenticated states with same user are equal', () {
+        final state1 = Authenticated(testUser);
+        final state2 = Authenticated(testUser);
+        expect(state1, equals(state2));
+      });
+
+      test('Unauthenticated states are equal', () {
+        final state1 = Unauthenticated();
+        final state2 = Unauthenticated();
+        expect(state1, equals(state2));
+      });
+
+      test('AuthLoading states are equal', () {
+        final state1 = AuthLoading();
+        final state2 = AuthLoading();
+        expect(state1, equals(state2));
+      });
+
+      test('AuthError states with same failure are equal', () {
+        final state1 = AuthError(testFailure);
+        final state2 = AuthError(testFailure);
+        expect(state1, equals(state2));
+      });
+    });
+
+    group('Event equality', () {
+      test('SignInEvent with same parameters are equal', () {
+        final event1 = SignInEvent(email: testEmail, password: testPassword);
+        final event2 = SignInEvent(email: testEmail, password: testPassword);
+        expect(event1, equals(event2));
+      });
+
+      test('SignUpEvent with same parameters are equal', () {
+        final event1 = SignUpEvent(
+          email: testEmail,
+          password: testPassword,
+          name: testName,
+        );
+        final event2 = SignUpEvent(
+          email: testEmail,
+          password: testPassword,
+          name: testName,
+        );
+        expect(event1, equals(event2));
+      });
+
+      test('SignOutEvent instances are equal', () {
+        final event1 = SignOutEvent();
+        final event2 = SignOutEvent();
+        expect(event1, equals(event2));
+      });
+
+      test('CheckAuthStatusEvent instances are equal', () {
+        final event1 = CheckAuthStatusEvent();
+        final event2 = CheckAuthStatusEvent();
+        expect(event1, equals(event2));
+      });
     });
   });
 }

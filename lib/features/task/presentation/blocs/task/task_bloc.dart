@@ -6,7 +6,6 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:task_manager/core/error/failures.dart';
 import 'package:task_manager/features/task/domain/entities/task.dart';
-import 'package:task_manager/features/task/domain/usecases/add_task.dart';
 import 'package:task_manager/features/task/domain/usecases/get_tasks.dart';
 
 part 'task_event.dart';
@@ -14,12 +13,8 @@ part 'task_state.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
   final GetTasks getTasks;
-  final AddTask addTask;
-  TaskBloc({required this.getTasks, required this.addTask})
-    : super(TaskInitial()) {
+  TaskBloc({required this.getTasks}) : super(TaskInitial()) {
     on<GetTasksEvent>(_onGetTasksEvent);
-
-    on<AddTaskEvent>(_onAddTaskEvent);
   }
 
   Future<void> _onGetTasksEvent(
@@ -33,12 +28,5 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       (failure) => emit(TaskError(message: failure.message)),
       (tasks) => emit(TaskLoaded(tasks: tasks)),
     );
-  }
-
-  Future<void> _onAddTaskEvent(
-    AddTaskEvent event,
-    Emitter<TaskState> emit,
-  ) async {
-    await addTask.call(event.task);
   }
 }

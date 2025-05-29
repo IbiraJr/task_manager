@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:task_manager/features/task/presentation/bloc/task_bloc.dart';
+import 'package:task_manager/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:task_manager/features/task/presentation/blocs/task/task_bloc.dart';
 import 'package:task_manager/features/task/presentation/components/task_card.dart';
 import 'package:task_manager/features/task/presentation/pages/task_form_page.dart';
 
@@ -12,16 +13,38 @@ class TaskListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Task List'), centerTitle: true),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await context.push(TaskFormPage.routeName);
-          context.read<TaskBloc>().add(GetTasksEvent());
-        },
-        child: Icon(Icons.add),
-      ),
-      body: TaskListWidget(),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, state) {
+        if (state is AuthLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state is Authenticated) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Task List - ${state.user.name}'),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    context.read<AuthBloc>().add(SignOutEvent());
+                  },
+                  icon: Icon(Icons.logout),
+                ),
+              ],
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () async {
+                await context.push(TaskFormPage.routeName);
+                context.read<TaskBloc>().add(GetTasksEvent());
+              },
+              child: Icon(Icons.add),
+            ),
+            body: TaskListWidget(),
+          );
+        } else {
+          return Center(child: Text('Something went wrong'));
+        }
+      },
     );
   }
 }

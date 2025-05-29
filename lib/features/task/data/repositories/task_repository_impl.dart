@@ -33,19 +33,25 @@ class TaskRepositoryImpl implements TaskRepository {
   }
 
   @override
-  Future<void> addTask(Task task) async {
-    final model = TaskModel(
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      isCompleted: task.isCompleted,
-      createdAt: task.createdAt,
-      isSynced: await networkInfo.isConnected,
-    );
-    if (await networkInfo.isConnected) {
-      await taskRemoteDataSource.addTask(model);
+  Future<dartz.Either<Failure, void>> addTask(Task task) async {
+    try {
+      final isSynced = await networkInfo.isConnected;
+      final model = TaskModel(
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        isCompleted: task.isCompleted,
+        createdAt: task.createdAt,
+        isSynced: isSynced,
+      );
+      if (isSynced) {
+        await taskRemoteDataSource.addTask(model);
+      }
+      await taskLocalDataSource.addTask(model);
+      return dartz.Right(null);
+    } catch (e) {
+      return dartz.Left(ServerFailure('Unknown error: ${e.toString()}'));
     }
-    await taskLocalDataSource.addTask(model);
   }
 
   @override

@@ -3,7 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:task_manager/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:task_manager/features/auth/presentation/pages/sign_in.dart';
 import 'package:task_manager/features/auth/presentation/pages/sign_up.dart';
-import 'package:task_manager/features/task/presentation/bloc/task_bloc.dart';
+import 'package:task_manager/features/task/presentation/blocs/add_task/add_task_bloc.dart';
+import 'package:task_manager/features/task/presentation/blocs/task/task_bloc.dart';
 import 'package:task_manager/features/task/presentation/pages/task_form_page.dart';
 import 'package:task_manager/features/task/presentation/pages/task_list_page.dart';
 import 'package:task_manager/injection_container.dart';
@@ -34,7 +35,7 @@ final router = GoRouter(
       name: 'newTask',
       builder:
           (context, state) => BlocProvider(
-            create: (_) => sl<TaskBloc>(),
+            create: (_) => sl<AddTaskBloc>(),
             child: const TaskFormPage(),
           ),
     ),

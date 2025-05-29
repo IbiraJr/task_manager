@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:task_manager/features/auth/data/exceptions/auth_exceptions.dart';
 import 'package:task_manager/features/auth/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -14,14 +15,23 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl({required this.firebaseAuth});
   @override
   Future<UserModel> signIn(String email, String password) async {
-    // TODO: implement signIn
-    throw UnimplementedError();
+    final userCredential = await firebaseAuth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+    if (userCredential.user == null) {
+      throw UnknownAuthException();
+    }
+    return UserModel(
+      id: userCredential.user!.uid,
+      email: userCredential.user!.email!,
+      name: userCredential.user!.displayName!,
+    );
   }
 
   @override
   Future<void> signOut() {
-    // TODO: implement signOut
-    throw UnimplementedError();
+    return firebaseAuth.signOut();
   }
 
   @override
@@ -29,7 +39,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     UserCredential userCredential = await firebaseAuth
         .createUserWithEmailAndPassword(email: email, password: password);
     await userCredential.user!.updateDisplayName(name);
-    final updatedUser = await firebaseAuth.currentUser!;
+    final updatedUser = firebaseAuth.currentUser!;
     return UserModel(
       id: updatedUser.uid,
       email: updatedUser.email!,

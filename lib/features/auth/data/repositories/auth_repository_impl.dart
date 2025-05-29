@@ -28,9 +28,15 @@ class AuthRepositoryImpl extends AuthRepository {
   }
 
   @override
-  Future<void> signOut() {
-    // TODO: implement signOut
-    throw UnimplementedError();
+  Future<Either<Failure, void>> signOut() async {
+    try {
+      await authRemoteDataSource.signOut();
+      return Right(null);
+    } on auth.FirebaseAuthException catch (e) {
+      return Left(mapFirebaseAuthError(e));
+    } catch (e) {
+      return Left(AuthFailure('Unknown error: ${e.toString()}'));
+    }
   }
 
   @override

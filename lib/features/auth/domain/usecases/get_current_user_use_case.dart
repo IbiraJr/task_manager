@@ -4,7 +4,7 @@ import 'package:task_manager/features/auth/domain/repositories/auth_repository.d
 class GetCurrentUserUseCase {
   final AuthRepository authRepository;
   GetCurrentUserUseCase(this.authRepository);
-  Future<User?> call() async {
-    return await authRepository.getCurrentUser();
+  User? call() {
+    return authRepository.getCurrentUser();
   }
 }
