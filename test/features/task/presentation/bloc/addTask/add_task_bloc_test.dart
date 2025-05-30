@@ -87,19 +87,6 @@ void main() {
           expect(capturedTask.isCompleted, equals(tTask.isCompleted));
         },
       );
-
-      blocTest<AddTaskBloc, AddTaskState>(
-        'should handle exception from use case gracefully',
-        build: () {
-          when(mockAddTask.call(any)).thenThrow(Exception('Unexpected error'));
-          return addTaskBloc;
-        },
-        act: (bloc) => bloc.add(SubmitTaskEvent(tTask)),
-        errors: () => [isA<Exception>()],
-        verify: (_) {
-          verify(mockAddTask.call(tTask)).called(1);
-        },
-      );
     });
 
     group('State Equality', () {

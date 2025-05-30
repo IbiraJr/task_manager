@@ -47,7 +47,7 @@ void main() {
       ).thenAnswer((_) async => dartz.Right(tTasksList));
 
       // act
-      final result = await usecase();
+      final result = await usecase.call();
 
       // assert
       expect(result, dartz.Right(tTasksList));
@@ -64,10 +64,12 @@ void main() {
         ).thenAnswer((_) async => dartz.Right(<Task>[]));
 
         // act
-        final result = await usecase();
+        final result = await usecase.call();
 
         // assert
-        expect(result, dartz.Right(<Task>[]));
+        result.fold((failure) => fail('Should return success'), (tasks) {
+          expect(tasks, equals(<Task>[]));
+        });
         verify(mockTaskRepository.getTasks());
         verifyNoMoreInteractions(mockTaskRepository);
       },

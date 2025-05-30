@@ -22,7 +22,6 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     Emitter<TaskState> emit,
   ) async {
     emit(TaskLoading());
-    await Future.delayed(const Duration(seconds: 3));
     final dartz.Either<Failure, List<Task>> result = await getTasks.call();
     result.fold(
       (failure) => emit(TaskError(message: failure.message)),

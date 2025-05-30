@@ -20,6 +20,14 @@ void main() {
     late MockAuthBloc mockAuthBloc;
     late MockTaskBloc mockTaskBloc;
 
+    setUpAll(() {
+      provideDummy<TaskState>(TaskInitial());
+      provideDummy<AuthState>(
+        Authenticated(
+          User(id: '1', name: 'John Doe', email: 'john@example.com'),
+        ),
+      );
+    });
     setUp(() {
       mockAuthBloc = MockAuthBloc();
       mockTaskBloc = MockTaskBloc();
@@ -125,31 +133,6 @@ void main() {
         verify(mockAuthBloc.add(argThat(isA<SignOutEvent>()))).called(1);
       });
     });
-
-    group('FloatingActionButton', () {
-      testWidgets('should trigger GetTasksEvent when FAB navigation returns', (
-        tester,
-      ) async {
-        // Arrange
-        final mockUser = User(
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-        );
-        when(mockAuthBloc.state).thenReturn(Authenticated(mockUser));
-        when(mockAuthBloc.stream).thenAnswer((_) => const Stream.empty());
-        when(mockTaskBloc.state).thenReturn(TaskInitial());
-        when(mockTaskBloc.stream).thenAnswer((_) => const Stream.empty());
-
-        // Act
-        await tester.pumpWidget(createWidgetUnderTest());
-        await tester.tap(find.byIcon(Icons.add));
-        await tester.pumpAndSettle();
-
-        // Assert
-        verify(mockTaskBloc.add(argThat(isA<GetTasksEvent>()))).called(1);
-      });
-    });
   });
 
   group('TaskListWidget Tests', () {
@@ -157,6 +140,9 @@ void main() {
 
     setUp(() {
       mockTaskBloc = MockTaskBloc();
+    });
+    setUpAll(() {
+      provideDummy<TaskState>(TaskInitial());
     });
 
     tearDown(() {

@@ -55,7 +55,10 @@ void main() {
           ).thenAnswer((_) async => dartz.Right(tTasks));
           return taskBloc;
         },
-        act: (bloc) => bloc.add(GetTasksEvent()),
+        act: (bloc) async {
+          bloc.add(GetTasksEvent());
+          await Future.delayed(const Duration(milliseconds: 100));
+        },
         expect: () => [TaskLoading(), TaskLoaded(tasks: tTasks)],
         verify: (_) {
           verify(mockGetTasks.call()).called(1);

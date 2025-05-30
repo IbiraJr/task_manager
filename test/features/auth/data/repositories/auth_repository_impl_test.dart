@@ -119,7 +119,10 @@ void main() {
           expect(result.isLeft(), true);
           result.fold((failure) {
             expect(failure, isA<AuthFailure>());
-            expect(failure.message, contains('Email or password is incorrect.'));
+            expect(
+              failure.message,
+              contains('Email or password is incorrect.'),
+            );
           }, (_) => fail('Should return failure'));
         },
       );
@@ -297,9 +300,7 @@ void main() {
 
       test('should return null when no user is logged in', () async {
         // arrange
-        when(
-          mockAuthRemoteDataSource.getCurrentUser(),
-        ).thenReturn(null);
+        when(mockAuthRemoteDataSource.getCurrentUser()).thenReturn(null);
 
         // act
         final result = await repository.getCurrentUser();
@@ -321,10 +322,41 @@ void main() {
     });
 
     group('signOut', () {
-      test('should throw UnimplementedError', () {
-        // act & assert
-        expect(() => repository.signOut(), throwsA(isA<UnimplementedError>()));
-      });
+      test(
+        'should return a Right with null when signOut is successful',
+        () async {
+          // arrange
+          when(
+            mockAuthRemoteDataSource.signOut(),
+          ).thenAnswer((_) async => Right(null));
+          // act
+          final result = await repository.signOut();
+          // assert
+          expect(result, equals(Right(null)));
+        },
+      );
+      test(
+        'should return a Left with AuthFailure when signOut fails',
+        () async {
+          // arrange
+          when(mockAuthRemoteDataSource.signOut()).thenThrow(
+            auth.FirebaseAuthException(
+              code: 'sign-out-failed',
+              message: 'Sign out failed',
+            ),
+          );
+          // act
+          final result = await repository.signOut();
+          // assert
+          result.fold(
+            (l) => expect(
+              l,
+              equals(AuthFailure('Authentication failed. Sign out failed')),
+            ),
+            (r) => fail('Should return failure'),
+          );
+        },
+      );
     });
 
     group('Edge Cases', () {
